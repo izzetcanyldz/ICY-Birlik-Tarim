@@ -230,11 +230,18 @@ function v10DashboardLayout(main,showWeather){
 }
 companyDashboard=function(){return v10CompanyDashboard()};
 dealerDashboard=function(){
- const main=v10DealerDashboard();
- const actions=`<div class="card mb-3">${head('Yapılacak İşlemler','Bayi işlem hatırlatmaları')}${alerts([['files','Eksik belge yükleyin','BF-2026-0151 · ÇKS Belgesi','yellow','documents'],['message-circle','Yeni başvuru mesajı','Yetkili personelden yanıt bekleniyor','blue','messages'],['calendar','Yaklaşan vade','Senet ödeme tarihi yaklaşıyor','orange','notes_due']])}<div class="card-body"><button class="btn btn-primary w-100" onclick="navigate('new')">${icon('plus')} Yeni Başvuru</button></div></div>`;
- return v10DashboardLayout(main,true).replace('<div class="col-12 col-xl-4 v10-rail">'+weatherWidget()+marketSection(),'<div class="col-12 col-xl-4 v10-rail">'+weatherWidget()+marketSection()+actions);
+ const original=v10DealerDashboard();
+ const section='<div class="d-flex align-items-center justify-content-between mb-3"><h2 class="h3 m-0">Çiftçi Finansmanları</h2>';
+ const pos=original.indexOf(section);
+ if(pos<0)return v10DashboardLayout(original,true);
+ const upper=original.slice(0,pos);
+ const lower=original.slice(pos);
+ const actions=`<div class="card h-100">${head('Yapılacak İşlemler','Bayi işlem hatırlatmaları')}${alerts([['files','Eksik belge yükleyin','BF-2026-0151 · ÇKS Belgesi','yellow','documents'],['message-circle','Yeni başvuru mesajı','Yetkili personelden yanıt bekleniyor','blue','messages'],['calendar','Yaklaşan vade','Senet ödeme tarihi yaklaşıyor','orange','notes_due']])}<div class="card-body"><button class="btn btn-primary w-100" onclick="navigate('new')">${icon('plus')} Yeni Başvuru</button></div></div>`;
+ const tableStart='<div class="row row-cards"><div class="col-12"><div class="card">${head(\'Son Çiftçi Başvuruları\'';
+ const tableReplace='<div class="row row-cards"><div class="col-12 col-lg-8"><div class="card">${head(\'Son Çiftçi Başvuruları\'';
+ const lowerWithActions=lower.replace(tableStart,tableReplace).replace('</div></div></div></div>`}', '</div></div><div class="col-12 col-lg-4">'+actions+'</div></div>`}');
+ return v10DashboardLayout(upper,true)+'<div class="v109-farmer-section mt-4">'+lowerWithActions+'</div>';
 };
-
 // V10.1: All 81 Turkish provinces are selectable. New entries resolve coordinates on demand.
 ["Adıyaman","Afyonkarahisar","Ağrı","Aksaray","Amasya","Ardahan","Artvin","Aydın","Bartın","Batman","Bayburt","Bilecik","Bingöl","Bitlis","Bolu","Burdur","Çanakkale","Çankırı","Denizli","Düzce","Edirne","Elazığ","Erzincan","Erzurum","Giresun","Gümüşhane","Hakkâri","Hatay","Iğdır","Isparta","Kahramanmaraş","Karabük","Karaman","Kars","Kastamonu","Kırıkkale","Kırklareli","Kırşehir","Kilis","Kocaeli","Kütahya","Malatya","Manisa","Mardin","Mersin","Muğla","Muş","Nevşehir","Niğde","Ordu","Osmaniye","Rize","Sakarya","Siirt","Sinop","Sivas","Şırnak","Tokat","Trabzon","Tunceli","Uşak","Van","Yalova","Yozgat","Zonguldak"].forEach(name=>{if(!weatherCities.some(c=>c[0]===name))weatherCities.push([name,null,null])});
 weatherCities.sort((a,b)=>a[0].localeCompare(b[0],'tr'));

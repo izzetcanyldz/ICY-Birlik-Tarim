@@ -232,7 +232,7 @@ companyDashboard=function(){return v10CompanyDashboard()};
 dealerDashboard=function(){
  const main=v10DealerDashboard();
  const actions=`<div class="card mb-3">${head('Yapılacak İşlemler','Bayi işlem hatırlatmaları')}${alerts([['files','Eksik belge yükleyin','BF-2026-0151 · ÇKS Belgesi','yellow','documents'],['message-circle','Yeni başvuru mesajı','Yetkili personelden yanıt bekleniyor','blue','messages'],['calendar','Yaklaşan vade','Senet ödeme tarihi yaklaşıyor','orange','notes_due']])}<div class="card-body"><button class="btn btn-primary w-100" onclick="navigate('new')">${icon('plus')} Yeni Başvuru</button></div></div>`;
- return v10DashboardLayout(main,true).replace('<div class="col-12 col-xl-4 v10-rail">','<div class="col-12 col-xl-4 v10-rail">'+actions);
+ return v10DashboardLayout(main,true).replace('<div class="col-12 col-xl-4 v10-rail">'+weatherWidget()+marketSection(),'<div class="col-12 col-xl-4 v10-rail">'+weatherWidget()+marketSection()+actions);
 };
 
 // V10.1: All 81 Turkish provinces are selectable. New entries resolve coordinates on demand.

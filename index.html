@@ -184,4 +184,12 @@ function v10DashboardLayout(main,showWeather){
 }
 companyDashboard=function(){return v10DashboardLayout(v10CompanyDashboard(),false)};
 dealerDashboard=function(){return v10DashboardLayout(v10DealerDashboard(),true)};
+
+// V10.1: All 81 Turkish provinces are selectable. New entries resolve coordinates on demand.
+["Adıyaman","Afyonkarahisar","Ağrı","Aksaray","Amasya","Ardahan","Artvin","Aydın","Bartın","Batman","Bayburt","Bilecik","Bingöl","Bitlis","Bolu","Burdur","Çanakkale","Çankırı","Denizli","Düzce","Edirne","Elazığ","Erzincan","Erzurum","Giresun","Gümüşhane","Hakkâri","Hatay","Iğdır","Isparta","Kahramanmaraş","Karabük","Karaman","Kars","Kastamonu","Kırıkkale","Kırklareli","Kırşehir","Kilis","Kocaeli","Kütahya","Malatya","Manisa","Mardin","Mersin","Muğla","Muş","Nevşehir","Niğde","Ordu","Osmaniye","Rize","Sakarya","Siirt","Sinop","Sivas","Şırnak","Tokat","Trabzon","Tunceli","Uşak","Van","Yalova","Yozgat","Zonguldak"].forEach(name=>{if(!weatherCities.some(c=>c[0]===name))weatherCities.push([name,null,null])});
+weatherCities.sort((a,b)=>a[0].localeCompare(b[0],'tr'));
+const v101WeatherChoose=weatherChoose;
+weatherChoose=function(i){const c=weatherCities[Number(i)];if(!c)return;if(c[1]===null){document.getElementById('weatherSearch').value=c[0];weatherSearchCity();return;}v101WeatherChoose(i)};
+// Refresh after all dashboard overrides and city options have been initialized.
+render();
 </script></body></html>

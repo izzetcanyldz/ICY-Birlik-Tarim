@@ -137,7 +137,7 @@ function wizardGo(step){
   if(wizardStep===1){
    const borrower=String(wizardValues.borrower||'').trim();
    if(borrower.length<2){alert('Devam etmek için borçlu adı veya bayi unvanını girin.');document.querySelector('[name="borrower"]')?.focus();return}
-   if(wizardType==='farmer'&&!/^\\d{11}$/.test(String(wizardValues.tc||'').trim())){alert('T.C. kimlik numarası 11 haneli olmalıdır. Bu prototip gerçek kimlik doğrulaması yapmaz.');return}
+   if(wizardType==='farmer'&&!/^[0-9]{11}$/.test(String(wizardValues.tc||'').trim())){alert('T.C. kimlik numarası 11 haneli olmalıdır. Bu prototip gerçek kimlik doğrulaması yapmaz.');return}
   }
   if(wizardStep===2){
    if(!wizardProducts.length){alert('En az bir ürün eklemelisiniz.');return}

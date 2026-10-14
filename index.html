@@ -100,7 +100,7 @@ const demoDocs={
 const approvalHistory={};
 function stateFor(id){return approvalState[id]||(approvalState[id]={first:null,second:null,rejected:false})}
 function approvalStage(a){let st=stateFor(a[0]),docs=demoDocs[a[0]]||[];if(st.rejected)return 'Reddedildi';if(st.second||st.first&&a[4]<=approvalThreshold)return 'Nihai Onay (Demo)';if(docs.some(d=>d.state!=='Onaylandı'))return 'Belge Engeli';if(st.first)return 'İkinci Onay Bekliyor';return 'İlk Onay Bekliyor'}
-function approvalsPage(){return `<div class="alert alert-info">${icon('info-circle')} <strong>Prototip:</strong> Onaylar yalnızca bu sayfanın örnek verilerini değiştirir; gerçek finansman onayı, limit rezervasyonu veya senet oluşturmaz. Eşik örneği: ${money(approvalThreshold)}.</div><div class="row row-cards mb-3">${card('Birinci Onay','7','shield-check','Örnek işlem havuzu','approvals')}${card('İkinci Onay','4','users','Farklı onaylayıcı gerekli','approvals')}${card('Belge Eksik','3','files','Nihai onay engeli','documents')}${card('Onay Eşiği',money(approvalThreshold),'adjustments','Temsili yönetim ayarı','approvals')}</div><div class="card">${head('Finansman Onay Havuzu','Satıra tıklayarak onay adımlarını ve belge engellerini inceleyin')}<div class="table-responsive"><table class="table table-vcenter card-table"><thead><tr><th>Başvuru</th><th>Borçlu</th><th>Tutar</th><th>Gerekli Onay</th><th>Aşama</th><th></th></tr></thead><tbody>${apps.slice(0,3).map(a=>`<tr><td>${a[0]}</td><td>${a[2]}</td><td>${money(a[4])}</td><td>${a[4]>approvalThreshold?'2 farklı kişi':'1 kişi'}</td><td><span class="badge ${approvalStage(a)==='Belge Engeli'?'bg-red-lt text-red':'bg-blue-lt text-blue'}">${approvalStage(a)}</span></td><td><button class="btn btn-sm btn-outline-primary" onclick="detail('${a[0]}','Finansman')">İncele</button></td></tr>`).join('')}</tbody></table></div></div>`}
+function approvalsPage(){return `<div class="alert alert-info">${icon('info-circle')} <strong>Prototip:</strong> Onaylar yalnızca bu sayfanın örnek verilerini değiştirir; gerçek finansman onayı, limit rezervasyonu veya senet oluşturmaz. Eşik örneği: ${money(approvalThreshold)}.</div><div class="row row-cards mb-3">${card('Birinci Onay','7','shield-check','Örnek işlem havuzu','approvals')}${card('İkinci Onay','4','users','Farklı onaylayıcı gerekli','approvals')}${card('Belge Eksik','3','files','Nihai onay engeli','documents')}${card('Onay Eşiği',money(approvalThreshold),'adjustments','Temsili yönetim ayarı','approvals')}</div><div class="card">${head('Finansman Onay Havuzu','Satıra tıklayarak onay adımlarını ve belge engellerini inceleyin')}<div class="table-responsive"><table class="table table-vcenter card-table"><thead><tr><th>Başvuru</th><th>Borçlu</th><th>Tutar</th><th>Gerekli Onay</th><th>Aşama</th><th></th></tr></thead><tbody>${apps.filter(a=>a[0].startsWith('DEMO-')||apps.indexOf(a)<3).map(a=>`<tr><td>${a[0]}</td><td>${a[2]}</td><td>${money(a[4])}</td><td>${a[4]>approvalThreshold?'2 farklı kişi':'1 kişi'}</td><td><span class="badge ${approvalStage(a)==='Belge Engeli'?'bg-red-lt text-red':'bg-blue-lt text-blue'}">${approvalStage(a)}</span></td><td><button class="btn btn-sm btn-outline-primary" onclick="detail('${a[0]}','Finansman')">İncele</button></td></tr>`).join('')}</tbody></table></div></div>`}
 function demoApproval(id,action){const a=apps.find(x=>x[0]===id),st=stateFor(id),docs=demoDocs[id]||[];if(docs.some(d=>d.state!=='Onaylandı')){alert('Tüm zorunlu belgeler onaylanmadan finansman onayı verilemez.');return}if(action==='first'){if(st.first){alert('İlk onay zaten verilmiş.');return}st.first='Selin Aksoy'}else if(action==='second'){if(!st.first||a[4]<=approvalThreshold||st.second){alert('İkinci onay koşulları karşılanmıyor.');return}st.second='Mehmet Demir'}else if(action==='reject'){let why=prompt('Ret gerekçesi (zorunlu):');if(!why||!why.trim())return;st.rejected=true;action='Ret: '+why.trim()}(approvalHistory[id]||(approvalHistory[id]=[])).push({event:action==='first'?'Birinci onay · Selin Aksoy':action==='second'?'İkinci onay · Mehmet Demir':action,when:new Date().toLocaleString('tr-TR')});detail(id,'Finansman')}
 function demoDocumentDecision(id,index,decision){let arr=demoDocs[id];if(!arr)return;arr[index].state=decision;(approvalHistory[id]||(approvalHistory[id]=[])).push({event:arr[index].name+' → '+decision,when:new Date().toLocaleString('tr-TR')});detail(id,'Belgeler')}
 // Bayi başvuru sihirbazı: yalnızca tarayıcı içi prototip, sunucuya veri göndermez.
@@ -130,7 +130,7 @@ if(wizardStep===5){
  <div class="card mb-3"><div class="card-header"><h3 class="card-title">Senet ve Belgeler</h3><button class="btn btn-sm btn-outline-primary ms-auto" onclick="wizardGo(3)">Senetleri Düzenle</button></div><div class="card-body"><div class="row g-3"><div class="col-md-4"><div class="text-secondary small">İlk Vade</div><strong>${escapeHtml(wizardValues.maturity||'Seçilmedi')}</strong></div><div class="col-md-4"><div class="text-secondary small">Senet Sayısı</div><strong>${count}</strong></div><div class="col-md-4"><div class="text-secondary small">Seçilen Belge</div><strong>${wizardDocs.length} dosya</strong> <button class="btn btn-sm btn-link" onclick="wizardGo(4)">Düzenle</button></div></div><div class="mt-3">${wizardDocs.map(x=>`<span class="badge bg-blue-lt me-1 mb-1">${icon('file')} ${escapeHtml(x.name)}</span>`).join('')||'<span class="text-secondary">Henüz belge seçilmedi.</span>'}</div></div></div>
  <div class="alert alert-warning mb-0">Taslağı Kaydet yalnızca bu tarayıcıya örnek kayıt oluşturur. Dosyaların içeriği yüklenmez; şirket personeline başvuru iletilmez.</div>`;
 }
-return `${wizardHeader()}<div class="card"><div class="card-header"><h3 class="card-title">${wizardSteps[wizardStep]}</h3><span class="badge bg-green-lt ms-auto">Adım ${wizardStep+1}/6</span></div><div class="card-body">${body}</div><div class="card-footer d-flex justify-content-between"><button class="btn btn-outline-secondary" ${wizardStep===0?'disabled':''} onclick="wizardGo(${wizardStep-1})">${icon('arrow-left')} Geri</button><div class="d-flex gap-2"><button class="btn btn-outline-primary" onclick="wizardSave()">${icon('device-floppy')} Taslağı Kaydet</button>${wizardStep<5?`<button class="btn btn-primary" onclick="wizardGo(${wizardStep+1})">Devam ${icon('arrow-right')}</button>`:`<button class="btn btn-primary" onclick="alert('Gerçek başvuru gönderimi bu prototipte etkin değildir.')">Başvuruyu Gönder (Demo)</button>`}</div></div></div>${wizardSaved?'<div class="alert alert-success mt-3">Demo taslak bu tarayıcıya kaydedildi.</div>':''}`}
+return `${wizardHeader()}<div class="card"><div class="card-header"><h3 class="card-title">${wizardSteps[wizardStep]}</h3><span class="badge bg-green-lt ms-auto">Adım ${wizardStep+1}/6</span></div><div class="card-body">${body}</div><div class="card-footer d-flex justify-content-between"><button class="btn btn-outline-secondary" ${wizardStep===0?'disabled':''} onclick="wizardGo(${wizardStep-1})">${icon('arrow-left')} Geri</button><div class="d-flex gap-2"><button class="btn btn-outline-primary" onclick="wizardSave()">${icon('device-floppy')} Taslağı Kaydet</button>${wizardStep<5?`<button class="btn btn-primary" onclick="wizardGo(${wizardStep+1})">Devam ${icon('arrow-right')}</button>`:`<button class="btn btn-primary" onclick="wizardSubmitDemo()">Demo Başvuruyu Oluştur</button>`}</div></div></div>${wizardSaved?'<div class="alert alert-success mt-3">Demo taslak bu tarayıcıya kaydedildi.</div>':''}`}
 function wizardGo(step){
  if(step<0||step>5)return;
  if(step>wizardStep){
@@ -256,6 +256,39 @@ async function loadWeather(){weatherLoading=true;weatherError='';const el=docume
 const v7OriginalSecondary=secondary;secondary=function(){if(page==='partners'&&portal==='company')return registryPage();if(page==='farmers'&&portal==='dealer')return registryPage();if(page==='registry_detail')return registryDetailPage();return v7OriginalSecondary()};
 const v7OriginalDealerDashboard=dealerDashboard;dealerDashboard=function(){return weatherWidget()+v7OriginalDealerDashboard()};
 const v7OriginalRender=render;render=function(){v7OriginalRender();if(page==='registry_detail'){document.getElementById('mainTitle').textContent='Kayıt Detayı';document.getElementById('crumb').textContent=(portal==='company'?'Şirket':'Bayi')+' / Kayıt Detayı'}};
+
+
+/* V10.14 - browser-only handoff between dealer and company previews. */
+const icyDemoKey='icy_demo_applications_v1014';
+function icyLoadDemoApplications(){
+ try{
+  const rows=JSON.parse(localStorage.getItem(icyDemoKey)||'[]');
+  if(!Array.isArray(rows))return;
+  rows.slice(0,30).forEach(item=>{
+   if(!item||!/^DEMO-[0-9]+$/.test(item.id)||apps.some(a=>a[0]===item.id))return;
+   apps.unshift([item.id,'Bereket Tarım',String(item.borrower||'Demo Başvuru'),item.type==='dealer'?'Bayi':'Çiftçi',Number(item.total)||0,'Belge Bekleniyor','Demo']);
+   demoDocs[item.id]=(Array.isArray(item.docs)?item.docs:[]).map(name=>({name:String(name),state:'Bekliyor'}));
+   if(!demoDocs[item.id].length)demoDocs[item.id]=[{name:'Zorunlu Belgeler',state:'Bekliyor'}];
+  });
+ }catch(e){console.warn('Demo başvuruları okunamadı',e)}
+}
+function wizardSubmitDemo(){
+ const total=wizardProducts.reduce((a,x)=>a+Number(x.qty)*Number(x.price),0);
+ if(!String(wizardValues.borrower||'').trim()||!wizardProducts.length||wizardProducts.some(x=>!String(x.name||'').trim()||Number(x.qty)<=0||Number(x.price)<=0)){alert('Önce borçlu ve ürün bilgilerini tamamlayın.');return}
+ if(!confirm('Bu başvuru yalnızca aynı tarayıcıdaki demo onay havuzuna eklenecek. Gerçek şirkete gönderilmeyecek. Devam edilsin mi?'))return;
+ const id='DEMO-'+Date.now();
+ const item={id,borrower:String(wizardValues.borrower).slice(0,120),type:wizardType,total,docs:wizardDocs.map(x=>x.name),products:wizardProducts.map(x=>({name:x.name,qty:x.qty,price:x.price})),created:new Date().toISOString()};
+ try{
+  const existing=JSON.parse(localStorage.getItem(icyDemoKey)||'[]');
+  localStorage.setItem(icyDemoKey,JSON.stringify([item,...(Array.isArray(existing)?existing:[])].slice(0,30)));
+ }catch(e){alert('Demo kayıt tarayıcıya yazılamadı.');return}
+ apps.unshift([id,'Bereket Tarım',item.borrower,item.type==='dealer'?'Bayi':'Çiftçi',total,'Belge Bekleniyor','Şimdi']);
+ demoDocs[id]=item.docs.length?item.docs.map(name=>({name,state:'Bekliyor'})):[{name:'Zorunlu Belgeler',state:'Bekliyor'}];
+ alert('Demo başvuru oluşturuldu: '+id+'\nŞirket Personeli → Onaylar ekranında inceleyebilirsiniz.');
+ wizardStep=0;wizardValues={};wizardProducts=[{name:'',qty:1,price:0}];wizardDocs=[];wizardSaved=false;
+ navigate('dashboard');
+}
+icyLoadDemoApplications();
 
 render();
 

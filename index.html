@@ -108,9 +108,36 @@ let wizardStep=0, wizardType='farmer', wizardProducts=[{name:'Gübre',qty:10,pri
 const wizardSteps=['Başvuru Türü','Borçlu Bilgileri','Ürünler','Finansman ve Senetler','Belgeler','Özet'];
 function wizardField(label,id,placeholder='',type='text'){return `<div class="col-md-6"><label class="form-label">${label}</label><input class="form-control" id="${id}" type="${type}" placeholder="${placeholder}" value="${escapeHtml(wizardValues[id]||'')}" oninput="wizardValues[this.id]=this.value"></div>`}
 let wizardValues={};
+
+// Demo sicil: sadece bu tarayicida; resmi T.C./telefon servisine baglanmaz.
+const icyRegistryKey='icy_demo_registry_v1';
+function icyRegistry(){try{return JSON.parse(localStorage.getItem(icyRegistryKey)||'{}')||{}}catch(e){return {}}}
+function icyPhoneParts(tc){const record=icyRegistry()[tc];if(record&&record.prefix&&record.suffix)return {prefix:record.prefix,suffix:record.suffix};let n=0;for(const c of tc)n=(n*31+Number(c))%9973;return {prefix:['532','534','535','536','542','544','555'][n%7],suffix:String(n%100).padStart(2,'0')}}
+function icyTcChanged(value){
+ const tc=String(value).replace(/\D/g,'').slice(0,11);wizardValues.tc=tc;
+ const status=document.getElementById('icy-tc-status'),person=document.getElementById('icy-new-person'),prefix=document.getElementById('icy-phone-prefix'),suffix=document.getElementById('icy-phone-suffix');
+ if(tc.length!==11){wizardValues.borrower='';wizardValues.phoneMiddle='';if(person)person.style.display='';if(status)status.textContent='11 haneli T.C. kimlik numarası girin.';if(prefix)prefix.value='';if(suffix)suffix.value='';return}
+ const record=icyRegistry()[tc],parts=icyPhoneParts(tc);
+ wizardValues.borrower=record?record.borrower:'';wizardValues.phoneMiddle='';
+ if(person)person.style.display=record?'none':'';
+ if(status)status.textContent=record?'Demo sicilde kayıt bulundu. Ad soyad yeniden istenmiyor.':'Demo sicilde kayıt yok. Yeni kişi bilgilerini doldurun.';
+ if(prefix)prefix.value=parts.prefix;if(suffix)suffix.value=parts.suffix;
+ const nameInput=document.getElementById('borrower');if(nameInput)nameInput.value=wizardValues.borrower;
+}
+function icySaveRegistry(){
+ const tc=String(wizardValues.tc||'');
+ if(!/^[0-9]{11}$/.test(tc))return;
+ const reg=icyRegistry(),parts=icyPhoneParts(tc);
+ reg[tc]={borrower:String(wizardValues.borrower||'').trim(),prefix:parts.prefix,suffix:parts.suffix,phoneMiddle:String(wizardValues.phoneMiddle||'')};
+ try{localStorage.setItem(icyRegistryKey,JSON.stringify(reg))}catch(e){}
+}
+
 function wizardHeader(){return `<div class="card mb-3"><div class="card-body"><div class="d-flex flex-wrap gap-2 align-items-center">${wizardSteps.map((t,i)=>`<button class="btn btn-sm ${i===wizardStep?'btn-primary':i<wizardStep?'btn-outline-success':'btn-outline-secondary'}" onclick="wizardGo(${i})">${i+1}. ${t}</button>`).join('')}</div><div class="progress mt-3" style="height:6px"><div class="progress-bar bg-green" style="width:${(wizardStep+1)/6*100}%"></div></div></div></div>`}
 function newApplicationPage(){let body='';if(wizardStep===0)body=`<div class="row g-3"><div class="col-md-6"><label class="form-selectgroup-item w-100"><input type="radio" name="kind" class="form-selectgroup-input" ${wizardType==='farmer'?'checked':''} onchange="wizardType='farmer';render()"><span class="form-selectgroup-label p-4"><i class="ti ti-plant-2 me-2"></i><strong>Çiftçi Finansmanı</strong><div class="text-secondary mt-2">Çiftçi adına başvuru · Tek fiziki senet</div></span></label></div><div class="col-md-6"><label class="form-selectgroup-item w-100"><input type="radio" name="kind" class="form-selectgroup-input" ${wizardType==='dealer'?'checked':''} onchange="wizardType='dealer';render()"><span class="form-selectgroup-label p-4"><i class="ti ti-building-bank me-2"></i><strong>Bayi Finansmanı</strong><div class="text-secondary mt-2">Bayi adına başvuru · 1–3 fiziki senet</div></span></label></div></div>`;
-if(wizardStep===1)body=`<div class="row g-3">${wizardType==='farmer'?wizardField('T.C. Kimlik Numarası','tc','11 haneli kimlik numarası'):wizardField('Bayi Vergi Numarası','tax','Vergi numarası')}${wizardField(wizardType==='farmer'?'Çiftçi Ad Soyad':'Bayi Ticari Unvanı','borrower','Örnek borçlu adı')}${wizardField('Telefon','phone','05xx xxx xx xx')}${wizardField('İl / İlçe','district','Örn. Konya / Selçuklu')}${wizardField('Tarımsal Faaliyet','activity','Örn. Hububat üretimi')}${wizardField('Arazi (dekar)','land','Örn. 120','number')}</div><div class="alert alert-info mt-3 mb-0">${icon('info-circle')} Gerçek sistemde çiftçi T.C. kimlik numarasıyla ortak sicilden sorgulanır, mükerrer kayıt engellenir. Bu prototipte gerçek kimlik sorgusu yapılmaz.</div>`;
+if(wizardStep===1){
+ const tc=String(wizardValues.tc||''),record=tc.length===11?icyRegistry()[tc]:null,parts=tc.length===11?icyPhoneParts(tc):{prefix:'',suffix:''};
+ body=`<div class="row g-3"><div class="col-md-6"><label class="form-label">T.C. Kimlik Numarası</label><input class="form-control" id="tc" inputmode="numeric" maxlength="11" autocomplete="off" placeholder="11 haneli kimlik numarası" value="${escapeHtml(tc)}" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,11);icyTcChanged(this.value)"><div class="form-hint" id="icy-tc-status">${tc.length===11?(record?'Demo sicilde kayıt bulundu. Ad soyad yeniden istenmiyor.':'Demo sicilde kayıt yok. Yeni kişi bilgilerini doldurun.'):'11 haneli T.C. kimlik numarası girin.'}</div></div><div class="col-md-6" id="icy-new-person" style="${record?'display:none':''}">${wizardField(wizardType==='farmer'?'Çiftçi Ad Soyad':'Başvuru Sahibi Ad Soyad','borrower','Ad soyad')}</div><div class="col-12"><label class="form-label">Cep Telefonu</label><div class="input-group"><span class="input-group-text">0</span><input id="icy-phone-prefix" class="form-control text-center" style="max-width:100px" aria-label="İlk üç hane" value="${parts.prefix}" readonly><input class="form-control text-center" id="phoneMiddle" inputmode="numeric" maxlength="5" aria-label="Ortadaki beş hane" placeholder="5 hane" value="${escapeHtml(wizardValues.phoneMiddle||'')}" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,5);wizardValues.phoneMiddle=this.value"><input id="icy-phone-suffix" class="form-control text-center" style="max-width:90px" aria-label="Son iki hane" value="${parts.suffix}" readonly></div><div class="form-hint">İlk 3 ve son 2 rakam demo amaçlı oluşturulur. Ortadaki 5 rakamı siz girersiniz.</div></div>${wizardField('İl / İlçe','district','Örn. Konya / Selçuklu')}${wizardField('Tarımsal Faaliyet','activity','Örn. Hububat üretimi')}${wizardField('Arazi (dekar)','land','Örn. 120','number')}${wizardType==='dealer'?wizardField('Bayi Ticari Unvanı','companyName','Bayi unvanı'):''}</div><div class="alert alert-info mt-3 mb-0">${icon('info-circle')} Demo sicil yalnızca bu tarayıcıda tutulur. Gerçek T.C. kimlik veya telefon sorgulaması yapılmaz. Gerçek kişisel veri yerine test bilgileri kullanın.</div>`;
+}
 if(wizardStep===2)body=`<div class="table-responsive"><table class="table table-vcenter"><thead><tr><th>Ürün</th><th>Miktar</th><th>Birim Fiyat (₺)</th><th>Tutar</th><th></th></tr></thead><tbody>${wizardProducts.map((x,i)=>`<tr><td><input class="form-control" aria-label="Ürün" list="icy-product-suggestions" value="${escapeHtml(x.name)}" onchange="wizardProducts[${i}].name=this.value"></td><td><input class="form-control" aria-label="Miktar" type="number" min="0.01" step="any" value="${x.qty}" onchange="wizardProducts[${i}].qty=Number(this.value);render()"></td><td><input class="form-control" aria-label="Birim fiyat" type="number" min="0.01" step="any" value="${x.price}" onchange="wizardProducts[${i}].price=Number(this.value);render()"></td><td class="fw-semibold text-nowrap">${money(x.qty*x.price)}</td><td><button class="btn btn-ghost-danger btn-icon" aria-label="Ürünü kaldır" onclick="wizardProducts.splice(${i},1);render()">${icon('trash')}</button></td></tr>`).join('')}</tbody></table></div><datalist id="icy-product-suggestions"><option value="Gübre"><option value="Tohum"><option value="Arpa"><option value="Buğday"><option value="Mısır"><option value="Ayçiçeği"><option value="Zirai İlaç"><option value="Yem"></datalist><div class="d-flex flex-wrap justify-content-between align-items-center gap-2"><button class="btn btn-outline-primary" onclick="wizardProducts.push({name:'',qty:1,price:0});render()">${icon('plus')} Ürün Ekle</button><div class="text-end"><span class="text-secondary small">Toplam ${wizardProducts.length} ürün</span><div class="fw-bold fs-3">Ürün Toplamı: ${money(wizardProducts.reduce((a,x)=>a+x.qty*x.price,0))}</div></div></div>`;
 if(wizardStep===3){
  const total=wizardProducts.reduce((a,x)=>a+x.qty*x.price,0);
@@ -137,7 +164,8 @@ function wizardGo(step){
   if(wizardStep===1){
    const borrower=String(wizardValues.borrower||'').trim();
    if(borrower.length<2){alert('Devam etmek için borçlu adı veya bayi unvanını girin.');document.querySelector('[name="borrower"]')?.focus();return}
-   if(wizardType==='farmer'&&!/^[0-9]{11}$/.test(String(wizardValues.tc||'').trim())){alert('T.C. kimlik numarası 11 haneli olmalıdır. Bu prototip gerçek kimlik doğrulaması yapmaz.');return}
+   if(!/^[0-9]{11}$/.test(String(wizardValues.tc||'').trim())){alert('T.C. kimlik numarası 11 haneli olmalıdır.');return}
+   if(!/^[0-9]{5}$/.test(String(wizardValues.phoneMiddle||''))){alert('Telefon numarasının ortasındaki 5 haneyi girin.');return}
   }
   if(wizardStep===2){
    if(!wizardProducts.length){alert('En az bir ürün eklemelisiniz.');return}
@@ -276,6 +304,7 @@ function wizardSubmitDemo(){
  const total=wizardProducts.reduce((a,x)=>a+Number(x.qty)*Number(x.price),0);
  if(!String(wizardValues.borrower||'').trim()||!wizardProducts.length||wizardProducts.some(x=>!String(x.name||'').trim()||Number(x.qty)<=0||Number(x.price)<=0)){alert('Önce borçlu ve ürün bilgilerini tamamlayın.');return}
  if(!confirm('Bu başvuru yalnızca aynı tarayıcıdaki demo onay havuzuna eklenecek. Gerçek şirkete gönderilmeyecek. Devam edilsin mi?'))return;
+ icySaveRegistry();
  const id='DEMO-'+Date.now();
  const item={id,borrower:String(wizardValues.borrower).slice(0,120),type:wizardType,total,docs:wizardDocs.map(x=>x.name),products:wizardProducts.map(x=>({name:x.name,qty:x.qty,price:x.price})),created:new Date().toISOString()};
  try{

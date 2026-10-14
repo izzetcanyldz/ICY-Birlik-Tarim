@@ -116,7 +116,22 @@ if(wizardStep===3)body=`<div class="row g-3">${wizardField('Vade Tarihi','maturi
 if(wizardStep===4)body=`<div class="alert alert-info">${icon('file-description')} Zorunlu belge listesi, başvuru türüne göre yönetici tarafından belirlenecek. Buradaki belge adları örnektir.</div><label class="form-label">Belge ekle (PDF / JPG / PNG, en fazla 10 MB)</label><input type="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png" multiple onchange="wizardAddDocs(this.files);this.value=''"/><div class="list-group mt-3">${wizardDocs.map((x,i)=>`<div class="list-group-item d-flex justify-content-between"><span>${icon('file')} ${escapeHtml(x.name)} <span class="badge bg-yellow-lt">Kontrol Bekliyor</span></span><button class="btn btn-sm btn-outline-danger" onclick="wizardDocs.splice(${i},1);render()">Kaldır</button></div>`).join('')||'<div class="list-group-item text-secondary">Henüz dosya seçilmedi.</div>'}</div>`;
 if(wizardStep===5)body=`<div class="row g-3"><div class="col-md-6"><div class="card card-body"><div class="text-secondary">Başvuru Türü</div><h3>${wizardType==='farmer'?'Çiftçi':'Bayi'} Finansmanı</h3></div></div><div class="col-md-6"><div class="card card-body"><div class="text-secondary">Borçlu</div><h3>${escapeHtml(wizardValues.borrower||'Henüz girilmedi')}</h3></div></div><div class="col-md-6"><div class="card card-body"><div class="text-secondary">Ürün Toplamı</div><h3>${money(wizardProducts.reduce((a,x)=>a+x.qty*x.price,0))}</h3></div></div><div class="col-md-6"><div class="card card-body"><div class="text-secondary">Seçilen Belgeler</div><h3>${wizardDocs.length}</h3></div></div></div><div class="alert alert-warning mt-3">Bu ekran yalnızca tasarım prototipidir. “Taslağı Kaydet” tarayıcıda yerel demo kaydı oluşturur; başvuru şirkete gönderilmez.</div>`;
 return `${wizardHeader()}<div class="card"><div class="card-header"><h3 class="card-title">${wizardSteps[wizardStep]}</h3><span class="badge bg-green-lt ms-auto">Adım ${wizardStep+1}/6</span></div><div class="card-body">${body}</div><div class="card-footer d-flex justify-content-between"><button class="btn btn-outline-secondary" ${wizardStep===0?'disabled':''} onclick="wizardGo(${wizardStep-1})">${icon('arrow-left')} Geri</button><div class="d-flex gap-2"><button class="btn btn-outline-primary" onclick="wizardSave()">${icon('device-floppy')} Taslağı Kaydet</button>${wizardStep<5?`<button class="btn btn-primary" onclick="wizardGo(${wizardStep+1})">Devam ${icon('arrow-right')}</button>`:`<button class="btn btn-primary" onclick="alert('Gerçek başvuru gönderimi bu prototipte etkin değildir.')">Başvuruyu Gönder (Demo)</button>`}</div></div></div>${wizardSaved?'<div class="alert alert-success mt-3">Demo taslak bu tarayıcıya kaydedildi.</div>':''}`}
-function wizardGo(step){if(step<0||step>5)return;wizardStep=step;render()}
+function wizardGo(step){
+ if(step<0||step>5)return;
+ if(step>wizardStep){
+  if(wizardStep===1){
+   const borrower=String(wizardValues.borrower||'').trim();
+   if(borrower.length<2){alert('Devam etmek için borçlu adı veya bayi unvanını girin.');document.querySelector('[name="borrower"]')?.focus();return}
+   if(wizardType==='farmer'&&!/^\\d{11}$/.test(String(wizardValues.tc||'').trim())){alert('T.C. kimlik numarası 11 haneli olmalıdır. Bu prototip gerçek kimlik doğrulaması yapmaz.');return}
+  }
+  if(wizardStep===2){
+   if(!wizardProducts.length){alert('En az bir ürün eklemelisiniz.');return}
+   if(wizardProducts.some(x=>!String(x.name||'').trim()||!Number.isFinite(Number(x.qty))||Number(x.qty)<=0||!Number.isFinite(Number(x.price))||Number(x.price)<=0)){alert('Her ürün için ürün adı, sıfırdan büyük miktar ve birim fiyat girin.');return}
+  }
+  if(wizardStep===3 && wizardValues.maturity && new Date(wizardValues.maturity+'T00:00:00')<new Date(new Date().toDateString())){alert('Vade tarihi geçmiş bir gün olamaz.');return}
+ }
+ wizardStep=step;render()
+}
 function wizardAddDocs(files){for(let f of files){if(!/\.(pdf|jpe?g|png)$/i.test(f.name)||f.size>10*1024*1024){alert('PDF/JPG/PNG ve en fazla 10 MB dosya seçin.');continue}wizardDocs.push({name:f.name,size:f.size})}render()}
 function wizardSave(){try{localStorage.setItem('tarimDemoDraft',JSON.stringify({wizardType,wizardValues,wizardProducts,wizardDocs}));wizardSaved=true;render()}catch(e){alert('Tarayıcıda taslak kaydedilemedi.')}}
 
